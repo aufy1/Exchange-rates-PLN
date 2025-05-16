@@ -1,0 +1,11 @@
+---
+import Layout from '../layouts/Layout.astro';
+import ExchangeRates from '../components/ExchangeRates.jsx';  // ← .jsx, a nie .astro
+---
+
+<Layout title="Aktualne Kursy Walut NBP">
+  <main>
+    <h1 style="text-align: center; margin-bottom: 20px;">Aplikacja Kursów Walut NBP</h1>
+    <ExchangeRates client:load />
+  </main>
+</Layout>

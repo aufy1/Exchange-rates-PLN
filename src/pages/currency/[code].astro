@@ -1,0 +1,54 @@
+---
+export const prerender = false;  // <-- WYŁĄCZAMY prerendering tej strony
+
+import Layout from '../../layouts/Layout.astro';
+import ChartCurrencyHistory from '../../components/ChartCurrencyHistory.jsx';
+
+const { code } = Astro.params;
+let currencyData = null;
+let error = null;
+let pageTitle = `Szczegóły Waluty: ${code?.toUpperCase() || ''}`;
+
+try {
+  const res = await fetch(`https://api.nbp.pl/api/exchangerates/rates/a/${code}/?format=json`);
+  if (!res.ok) {
+    if (res.status === 404) {
+      throw new Error('Nie znaleziono danych dla podanej waluty');
+    } else {
+      throw new Error(`Błąd sieci: ${res.status}`);
+    }
+  }
+  currencyData = await res.json();
+  pageTitle = `Szczegóły: ${currencyData.currency} (${currencyData.code})`;
+} catch (e) {
+  error = `Błąd podczas pobierania danych: ${e.message}`;
+}
+---
+
+<Layout title={pageTitle}>
+  <main style="max-width: 800px; margin: 0 auto; padding: 1rem;">
+    <p><a href="/">« Powrót do listy</a></p>
+
+    {error ? (
+      <div style="background-color: #FFCDD2; border: 1px solid #E57373; color: #B71C1C; padding: 15px; border-radius: 5px; margin-top: 20px;">
+        <strong>Błąd:</strong> {error}
+      </div>
+    ) : currencyData ? (
+      <section style="margin-top: 20px; background-color: #FFF3E0; padding: 20px; border-radius: 8px;">
+        <h1>{currencyData.currency} ({currencyData.code})</h1>
+        <p><strong>Tabela:</strong> {currencyData.table}</p>
+
+        <h3>Historia ostatnich kursów:</h3>
+        <ul>
+          {currencyData.rates.map(r => (
+            <li key={r.no}>{r.effectiveDate}: {r.mid.toFixed(4)}</li>
+          ))}
+        </ul>
+
+        <ChartCurrencyHistory client:load code={currencyData.code} />
+      </section>
+    ) : (
+      <p>Ładowanie danych...</p>
+    )}
+  </main>
+</Layout>
